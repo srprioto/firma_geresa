@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../services/api_service.dart';
+import '../../../services/api_service.dart';
 
 /// Pantalla de Confirmar. Sin diseño todavía: solo la lógica.
 class VerifyScreen extends StatelessWidget {
@@ -100,7 +100,7 @@ class VerifyScreen extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () => _elegirYVerificar(context),
-          child: const Text('Seleccionar documento PDF'),
+          child: const Text('verificar documento PDF'),
         ),
       ),
     );

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../services/api_service.dart';
+import '../../../services/api_service.dart';
 
 /// Pantalla de Firmar. Sin diseño todavía: solo la lógica.
 ///
@@ -50,7 +50,7 @@ class SignScreen extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () => _elegirYFirmar(context),
-          child: const Text('Seleccionar documento PDF'),
+          child: const Text('firmar documento PDF'),
         ),
       ),
     );
