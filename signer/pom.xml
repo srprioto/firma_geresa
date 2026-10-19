@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>pe.gob.geresacusco</groupId>
+    <artifactId>firmador-signer</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+        Usamos el BOM (Bill of Materials) oficial de DSS para que todas las
+        dependencias de DSS usen versiones compatibles entre sí sin tener
+        que fijar cada una a mano.
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+                <artifactId>dss-bom</artifactId>
+                <version>6.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Acceso a tokens: PKCS#11, PKCS#12, JKS y, lo que usamos aquí, MSCAPI (Windows-MY). -->
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-token</artifactId>
+        </dependency>
+
+        <!-- Creación y validación de firmas PAdES. -->
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-pades</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-pades-pdfbox</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-utils-apache-commons</artifactId>
+        </dependency>
+
+        <!-- API HTTP local, minimalista. -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>6.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.2</version>
+        </dependency>
+
+        <!-- Logging simple por consola. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.13</version>
+        </dependency>
+
+        <!--
+            Implementación abierta de javax.smartcardio sobre PC/SC (la API
+            estándar de Java para hablar con lectores de tarjetas inteligentes).
+            No es de RENIEC ni de ningún fabricante: es la misma librería de
+            código abierto que confirmamos (por análisis del software oficial)
+            que usa el propio firmaperu.exe para hablar con el DNIe.
+        -->
+        <dependency>
+            <groupId>io.github.jnasmartcardio</groupId>
+            <artifactId>jnasmartcardio</artifactId>
+            <version>0.2.7</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>firmador-signer</finalName>
+        <plugins>
+            <!--
+                Genera un único .jar "fat jar" con todas las dependencias
+                incluidas, para poder correrlo con `java -jar
+                firmador-signer.jar` sin tener que armar el classpath a mano.
+                Más adelante, cuando ya firmemos bien, empaquetamos esto con
+                jpackage para que no dependa de que el usuario final tenga
+                Java instalado.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>pe.gob.geresacusco.firmador.Main</mainClass>
+                                </transformer>
+                            </transformers>
+                            <!--
+                                Bouncy Castle (bcprov-jdk18on) viene firmado.
+                                Al fusionar todos los jars en uno solo, esas
+                                firmas quedan inválidas y Java se niega a
+                                arrancar con "Invalid signature file digest".
+                                Las excluimos: no afecta la seguridad de nuestra
+                                app, solo evita que Java intente verificar una
+                                firma de empaquetado que ya no aplica.
+                            -->
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
