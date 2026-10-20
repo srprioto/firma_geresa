@@ -12,11 +12,15 @@ class PopupFirma extends StatefulWidget {
 	final String nombreArchivo;
 	final String? rutaBackup;
 
+	/// Si viene con valor, firma automáticamente sin volver a pedir el PIN.
+	final String? pinPrecargado;
+
 	const PopupFirma({
 		super.key,
 		required this.pdfBytes,
 		required this.nombreArchivo,
 		required this.rutaBackup,
+		this.pinPrecargado,
 	});
 
 	@override
@@ -36,9 +40,16 @@ class _PopupFirmaState extends State<PopupFirma> {
 	@override
 	void initState() {
 		super.initState();
-		WidgetsBinding.instance.addPostFrameCallback((_) {
-			if (mounted) _pinFocusNode.requestFocus();
-		});
+		if (widget.pinPrecargado != null) {
+			_pinCtrl.text = widget.pinPrecargado!;
+			WidgetsBinding.instance.addPostFrameCallback((_) {
+				if (mounted) _firmar();
+			});
+		} else {
+			WidgetsBinding.instance.addPostFrameCallback((_) {
+				if (mounted) _pinFocusNode.requestFocus();
+			});
+		}
 	}
 
 	Future<void> _firmar() async {
@@ -67,17 +78,20 @@ class _PopupFirmaState extends State<PopupFirma> {
 				}
 			}
 
+			if (!mounted) return;
 			setState(() {
 				_pdfFirmado = pdfFirmado;
 				_estado = _EstadoDialogoFirma.exito;
 			});
 		} catch (e) {
 			debugPrint('[Firmar] Error: $e');
+			if (!mounted) return;
 			setState(() {
 				_mensajeError = '$e';
 				_estado = _EstadoDialogoFirma.error;
 			});
 		} finally {
+			// El PIN no se conserva después de usarlo
 			_pinCtrl.clear();
 		}
 	}
