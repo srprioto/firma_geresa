@@ -6,6 +6,7 @@ import 'package:firmador_geresa/services/api_service.dart';
 import 'package:firmador_geresa/widgets/file_drop_zone.dart';
 import 'package:flutter/material.dart';
 
+
 class VerifyLayout extends StatefulWidget {
 	const VerifyLayout({super.key});
 
