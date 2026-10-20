@@ -25,8 +25,8 @@ class SignScreen extends StatelessWidget {
 					pdfBytes: bytes,
 					nombreArchivo: nombre,
 					imagenFirmaBytes: imagenFirmaBytes,
-					nombreFirmante: 'EL PANZAS',
-					dniFirmante: '12345678',
+					nombreFirmante: 'SANTIAGO QUISPE PERALTA',
+					dniFirmante: '25000990',
 				),
 			),
 		);
