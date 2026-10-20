@@ -13,28 +13,27 @@ class HomeScreen extends StatelessWidget {
 			backgroundColor: context.backgroundLight,
 			body: HomeBox(
 				children: [
-					
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFDCFCE7),
 						icono: const Icon(Icons.verified_user_rounded, size: 40, color: Color(0xFF10B981)),
 						titulo: 'Verificar Firma Digital',
 						descripcion: 'Revisa la validez de las firmas digitales en tus documentos.',
-						onTap: () => (
+						onTap: () {
+							// Ahora este Navigator.push se ejecuta DENTRO del Navigator anidado,
+							// por lo que el sidebar NO desaparece.
 							Navigator.push(
 								context,
 								MaterialPageRoute(builder: (context) => const FirmaScreen()),
-							)
-						),
+							);
+						},
 					),
-
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFF3E8FF),
 						icono: const Icon(Icons.copy_all_rounded, size: 40, color: Color(0xFF8B5CF6)),
 						titulo: "Unir PDF's",
 						descripcion: 'Combina varios archivos PDF en uno solo.',
-						onTap: () => (),
+						onTap: () {},
 					),
-
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFDBEAFE),
 						icono: const Row(
@@ -49,32 +48,29 @@ class HomeScreen extends StatelessWidget {
 						),
 						titulo: 'Convertir Word a PDF',
 						descripcion: 'Convierte tus documentos de Word a formato PDF.',
-						onTap: () => (),
+						onTap: () {},
 					),
-
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFFFEDD5),
 						icono: const Icon(Icons.open_in_new_rounded, size: 40, color: Color(0xFFF97316)),
 						titulo: 'Abrir ventana de Refirma',
 						descripcion: 'Accede a la aplicación Refirma desde aquí.',
-						onTap: () => (),
+						onTap: () {},
 					),
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFCCFBF1),
 						icono: const Icon(Icons.document_scanner_rounded, size: 40, color: Color(0xFF14B8A6)),
 						titulo: 'Escanear Documentos',
 						descripcion: 'Digitaliza tus documentos desde el escáner.',
-						onTap: () => (),
+						onTap: () {},
 					),
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFEDE9FE),
 						icono: const Icon(Icons.folder_rounded, size: 40, color: Color(0xFF8B5CF6)),
 						titulo: 'Guardar Documentos',
 						descripcion: 'Organiza y guarda tus archivos de forma rápida y segura.',
-						onTap: () => (),
+						onTap: () {},
 					),
-
-				
 				],
 			),
 		);

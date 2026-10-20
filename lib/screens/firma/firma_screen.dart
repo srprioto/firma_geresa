@@ -129,7 +129,7 @@ class _ToggleButton extends StatelessWidget {
 		return Padding(
 			padding: const EdgeInsets.all(4),
 			child: Material(
-				color: isSelected ? context.primaryBlue : Colors.transparent,
+				color: isSelected ? Colors.transparent : Colors.transparent,
 				borderRadius: BorderRadius.circular(context.radiusMd),
 				child: InkWell(
 					onTap: onTap,

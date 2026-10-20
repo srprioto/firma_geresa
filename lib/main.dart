@@ -1,5 +1,6 @@
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
-import 'package:firmador_geresa/screens/home/home_screen.dart';
+import 'package:firmador_geresa/screens/nav/navi_bar.dart';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -16,7 +17,7 @@ class FirmadorApp extends StatelessWidget {
 			theme: AppTheme.lightTheme,
 			title: 'Firmador GERESA Cusco',
 			// home: HomeScreenBtn(),
-			home: const HomeScreen(),
+			home: const NaviBar(),
 		);
 	}
 }
