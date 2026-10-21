@@ -15,7 +15,7 @@ class FirmaScreen extends StatelessWidget {
 				FirmaTabItem(
 					title: 'Firmar Documento',
 					icon: Icons.edit_document,
-					screen: SignScreen(rutaBackup: null),
+					screen: SignScreen(rutaBackup: "C:/Users/RenatoLuna/Desktop/backup_firmas"),
 				),
 				FirmaTabItem(
 					title: 'Ver Archivos',

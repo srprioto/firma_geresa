@@ -93,7 +93,7 @@ class _VerifyLayoutState extends State<VerifyLayout> {
 							child: VerifyRightPanel(
 								cargando: _cargando,
 								resultado: _resultado,
-								onCancelar: _onCancelar, // Pasamos la función para limpiar
+								onCancelar: _onCancelar,
 							),
 						),
 					],
