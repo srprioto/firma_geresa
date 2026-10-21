@@ -38,7 +38,7 @@ import java.util.List;
 public class DnieSignatureToken implements SignatureTokenConnection {
 
     private Card tarjeta;
-    private DnieCard dnieCard;
+    private DnieCardOperations dnieCard;
     private CertificateToken certificadoFirma;
     private String pin;
 
@@ -65,7 +65,7 @@ public class DnieSignatureToken implements SignatureTokenConnection {
         for (CardTerminal terminal : terminales) {
             if (terminal.isCardPresent()) {
                 this.tarjeta = terminal.connect("*");
-                this.dnieCard = new DnieCard(this.tarjeta);
+                this.dnieCard = DnieVersionDetector.detectar(this.tarjeta);
                 return;
             }
         }

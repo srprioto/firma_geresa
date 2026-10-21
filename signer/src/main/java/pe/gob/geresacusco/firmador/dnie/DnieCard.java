@@ -20,13 +20,13 @@ import java.util.HexFormat;
  * propio código, del mismo protocolo — no contiene código copiado de
  * RENIEC.
  *
- * NOTA: este protocolo se documentó para el DNIe "versión 3" (el que
- * detecta el software oficial por defecto cuando no coincide con los
- * ATR fijos de versiones anteriores). Si tu DNIe es más antiguo, es
- * posible que algunos de estos comandos no apliquen igual — avísame
- * si ves errores de "Respuesta inesperada" y ajustamos.
+ * Esta clase implementa específicamente el protocolo del DNIe "versión
+ * 3". Para la versión 2, que usa un protocolo distinto (archivo del
+ * certificado, comandos y formato de PIN diferentes), ver
+ * {@link DnieCardV2}. {@link DnieVersionDetector} elige cuál usar según
+ * el ATR de la tarjeta conectada.
  */
-public final class DnieCard {
+public final class DnieCard implements DnieCardOperations {
 
     // AID de la aplicación del DNIe dentro del chip.
     private static final byte[] AID_APLICACION =

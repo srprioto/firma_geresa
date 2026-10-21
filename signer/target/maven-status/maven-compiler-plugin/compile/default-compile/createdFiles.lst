@@ -3,7 +3,10 @@ pe\gob\geresacusco\firmador\SignerService.class
 pe\gob\geresacusco\firmador\VerifierService.class
 pe\gob\geresacusco\firmador\dnie\DnieCard.class
 pe\gob\geresacusco\firmador\dnie\DnieSignatureToken.class
+pe\gob\geresacusco\firmador\dnie\DnieVersionDetector.class
 pe\gob\geresacusco\firmador\dnie\DniePrivateKeyEntry.class
+pe\gob\geresacusco\firmador\dnie\DnieCardOperations.class
 pe\gob\geresacusco\firmador\dnie\TarjetaBloqueadaException.class
 pe\gob\geresacusco\firmador\Main.class
+pe\gob\geresacusco\firmador\dnie\DnieCardV2.class
 pe\gob\geresacusco\firmador\dnie\PinIncorrectoException.class
