@@ -1,11 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:firmador_geresa/screens/firma/verificar/btn_confirmar.dart';
 import 'package:firmador_geresa/screens/firma/verificar/panel_right.dart';
 import 'package:firmador_geresa/services/api_service.dart';
 import 'package:firmador_geresa/widgets/file_drop_zone.dart';
 import 'package:flutter/material.dart';
-
 
 class VerifyLayout extends StatefulWidget {
 	const VerifyLayout({super.key});
@@ -23,11 +21,15 @@ class _VerifyLayoutState extends State<VerifyLayout> {
 	void _onArchivoCargado(String path, String nombre) async {
 		final archivo = await File(path).readAsBytes();
 		if (!mounted) return;
+		
 		setState(() {
 			_pdfBytes = archivo;
 			_nombreArchivo = nombre;
 			_resultado = null;
 		});
+
+		// Llamamos automáticamente a la verificación
+		_onVerificar();
 	}
 
 	void _onCancelar() {
@@ -80,24 +82,10 @@ class _VerifyLayoutState extends State<VerifyLayout> {
 						Container(
 							width: 400,
 							margin: const EdgeInsets.only(left: 16),
-							child: Stack(
-								clipBehavior: Clip.none,
-								alignment: Alignment.center,
-								children: [
-									FileDropZone(
-										width: 400,
-										height: 380,
-										onFileDropped: _onArchivoCargado,
-									),
-									if (_pdfBytes != null)
-										Positioned(
-											bottom: -24,
-											child: VerifyButtons(
-												onCancelar: _onCancelar,
-												onVerificar: _onVerificar,
-											),
-										),
-								],
+							child: FileDropZone(
+								width: 400,
+								height: 380,
+								onFileDropped: _onArchivoCargado,
 							),
 						),
 						const SizedBox(width: 32),
@@ -105,6 +93,7 @@ class _VerifyLayoutState extends State<VerifyLayout> {
 							child: VerifyRightPanel(
 								cargando: _cargando,
 								resultado: _resultado,
+								onCancelar: _onCancelar, // Pasamos la función para limpiar
 							),
 						),
 					],

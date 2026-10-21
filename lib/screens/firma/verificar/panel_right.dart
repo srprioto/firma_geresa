@@ -1,14 +1,17 @@
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
+import 'package:firmador_geresa/widgets/link_text.dart';
 import 'package:flutter/material.dart';
 
 class VerifyRightPanel extends StatelessWidget {
 	final bool cargando;
 	final Map<String, dynamic>? resultado;
+	final VoidCallback onCancelar; // Nuevo callback
 
 	const VerifyRightPanel({
 		super.key, 
 		required this.cargando,
 		required this.resultado,
+		required this.onCancelar,
 	});
 
 	@override
@@ -62,13 +65,24 @@ class VerifyRightPanel extends StatelessWidget {
 						const SizedBox(height: 12),
 						ConstrainedBox(
 							constraints: const BoxConstraints(maxWidth: 350),
-							child: Text(
-								'Arrastra o selecciona un documento PDF en el panel izquierdo y presiona "Verificar firma" para comprobar su validez criptográfica.',
+							child: RichText(
 								textAlign: TextAlign.center,
-								style: TextStyle(
-									fontSize: 15,
-									color: context.textGrey,
-									height: 1.5,
+								text: TextSpan(
+									style: TextStyle(
+										fontSize: 15,
+										color: context.textGrey,
+										height: 1.5,
+									),
+									children: [
+										const TextSpan(
+											text: 'Arrastra o selecciona un PDF para verificar su validez automáticamente, o verifícalo de forma externa ingresando',
+										),
+										LinkText(
+											link: "https://apps.firmaperu.gob.pe/web/validador.xhtml",
+											text: " aquí en gob.pe",
+										),
+										const TextSpan(text: '.'),
+									],
 								),
 							),
 						),
@@ -76,6 +90,26 @@ class VerifyRightPanel extends StatelessWidget {
 				),
 			);
 		}
+
+		// ... (El resto de tus estados de error, no firmado y verificado)
+		// Al final de cada uno, agrega este botón para volver a empezar:
+		
+		Widget botonReiniciar = Padding(
+			padding: const EdgeInsets.only(top: 32),
+			child: OutlinedButton(
+				onPressed: onCancelar,
+				style: OutlinedButton.styleFrom(
+					backgroundColor: context.surfaceWhite,
+					foregroundColor: context.textGrey,
+					side: BorderSide(color: context.borderColor),
+					padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+					shape: RoundedRectangleBorder(
+						borderRadius: BorderRadius.circular(context.radiusPill),
+					),
+				),
+				child: const Text('Verificar otro documento'),
+			),
+		);
 
 		if (resultado!['error'] != null) {
 			return Center(
@@ -116,6 +150,7 @@ class VerifyRightPanel extends StatelessWidget {
 								),
 							),
 						),
+						botonReiniciar, // <-- Agregado aquí
 					],
 				),
 			);
@@ -164,6 +199,7 @@ class VerifyRightPanel extends StatelessWidget {
 								),
 							),
 						),
+						botonReiniciar, // <-- Agregado aquí
 					],
 				),
 			);
@@ -237,6 +273,7 @@ class VerifyRightPanel extends StatelessWidget {
 								],
 							),
 						),
+						botonReiniciar, // <-- Agregado aquí
 					],
 				),
 			),
