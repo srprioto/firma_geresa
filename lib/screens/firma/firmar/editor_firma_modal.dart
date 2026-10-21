@@ -168,6 +168,39 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 		});
 	}
 
+	// Calcula si el nombre debe ir en 1 o 2 líneas
+	List<String> _calcularNombreLineas(String nombre) {
+		// Formatear a Tipo Título (Primera letra mayúscula, resto minúsculas)
+		final textoFormateado = nombre.trim().split(' ').map((palabra) {
+			if (palabra.isEmpty) return '';
+			return palabra[0].toUpperCase() + palabra.substring(1).toLowerCase();
+		}).join(' ');
+
+		// 20 caracteres es el límite aproximado para el ancho del sello en puntos PDF
+		if (textoFormateado.length <= 20) return [textoFormateado];
+
+		final palabras = textoFormateado.split(' ');
+		if (palabras.length == 1) return [textoFormateado];
+
+		int mejorCorte = -1;
+		int largoActual = 0;
+
+		for (int i = 0; i < palabras.length; i++) {
+			largoActual += palabras[i].length + 1;
+			if (largoActual > 20) {
+				mejorCorte = i;
+				break;
+			}
+		}
+
+		if (mejorCorte <= 0) return [textoFormateado];
+
+		final linea1 = palabras.sublist(0, mejorCorte).join(' ');
+		final linea2 = palabras.sublist(mejorCorte).join(' ');
+		
+		return [linea1, linea2];
+	}
+
 	// ---------- Confirmar ----------
 
 	Future<void> _confirmar() async {
@@ -210,10 +243,20 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 			final negro = sf.PdfSolidBrush(sf.PdfColor(0, 0, 0));
 			final tx = x + _lado + 8;
 
-			g.drawString('Firmado digitalmente por:', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 9.5, 0, 0));
-			g.drawString(widget.nombreFirmante, negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + 16.7, 0, 0));
-			g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 25.7, 0, 0));
-			g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 32.9, 0, 0));
+			final lineasNombre = _calcularNombreLineas(widget.nombreFirmante);
+			final esDobleLinea = lineasNombre.length > 1;
+
+			g.drawString('Firmado digitalmente por:', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 7.5, 0, 0));
+			g.drawString(lineasNombre[0], negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + (esDobleLinea ? 13.5 : 16.7), 0, 0));
+			
+			if (esDobleLinea) {
+				g.drawString(lineasNombre[1], negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + 21, 0, 0));
+				g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 28, 0, 0));
+				g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 35, 0, 0));
+			} else {
+				g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 25.7, 0, 0));
+				g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 32.9, 0, 0));
+			}
 
 			final List<int> resultado = await document.save();
 
@@ -247,7 +290,12 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 		final ahora = DateTime.now();
 		final fechaStr = '${ahora.day.toString().padLeft(2, '0')}/${ahora.month.toString().padLeft(2, '0')}/${ahora.year}';
 		final horaStr = '${ahora.hour.toString().padLeft(2, '0')}:${ahora.minute.toString().padLeft(2, '0')}';
-		const estilo = TextStyle(fontSize: 6, color: Colors.black, height: 1.2);
+		
+		const estiloNormal = TextStyle(fontSize: 6, color: Colors.black, height: 1.1);
+		const estiloNegrita = TextStyle(fontSize: 7.5, color: Colors.black, fontWeight: FontWeight.bold, height: 1.1);
+
+		final lineasNombre = _calcularNombreLineas(widget.nombreFirmante);
+		final esDobleLinea = lineasNombre.length > 1;
 
 		return SizedBox(
 			width: _anchoFirma,
@@ -257,18 +305,18 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 				children: [
 					SizedBox(width: _lado, height: _lado, child: _imagenFirma()),
 					const SizedBox(width: 8),
-					Column(
-						mainAxisAlignment: MainAxisAlignment.center,
-						crossAxisAlignment: CrossAxisAlignment.start,
-						children: [
-							const Text('Firmado digitalmente por:', style: estilo),
-							Text(
-								widget.nombreFirmante,
-								style: const TextStyle(fontSize: 7.5, color: Colors.black, fontWeight: FontWeight.bold, height: 1.2),
-							),
-							Text('FIR (DNI ${widget.dniFirmante}) hard', style: estilo),
-							Text('Fecha: $fechaStr - $horaStr', style: estilo),
-						],
+					Expanded(
+						child: Column(
+							mainAxisAlignment: MainAxisAlignment.center,
+							crossAxisAlignment: CrossAxisAlignment.start,
+							children: [
+								const Text('Firmado digitalmente por:', style: estiloNormal),
+								Text(lineasNombre[0], style: estiloNegrita),
+								if (esDobleLinea) Text(lineasNombre[1], style: estiloNegrita),
+								Text('FIR (DNI ${widget.dniFirmante}) hard', style: estiloNormal),
+								Text('Fecha: $fechaStr - $horaStr', style: estiloNormal),
+							],
+						),
 					),
 				],
 			),
