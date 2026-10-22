@@ -39,7 +39,8 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 	final PdfViewerController _pdfController = PdfViewerController();
 	final GlobalKey _stackKey = GlobalKey();
 
-	bool _modoManual = false;
+	// Predeterminado: Modo manual
+	bool _modoManual = true;
 	bool _procesando = false;
 
 	// Tamaño de la firma en puntos PDF (el preview usa las mismas medidas y se escala)
@@ -53,7 +54,9 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 	int _paginaFirma = 1; // 1-based
 	int _totalPaginas = 1;
 	List<Size> _tamanos = const [];
-	PosicionFirma _posicionAuto = PosicionFirma.arribaIzquierda;
+	
+	// Predeterminado: Arriba al centro
+	PosicionFirma _posicionAuto = PosicionFirma.arribaCentro;
 
 	// ---------- Utilidades ----------
 
@@ -437,8 +440,8 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 																.map((p) => Size(p.width, p.height))
 																.toList();
 													});
-													// Posición por defecto: arriba izquierda
-													_colocarAutomatico();
+													// NOTA: Se quitó la llamada a _colocarAutomatico() aquí
+													// para respetar que el modo manual sea el predeterminado.
 												},
 												pageOverlaysBuilder: (context, pageRect, page) {
 													if (_posicionPorcentual == null || page.pageNumber != _paginaFirma) {
@@ -549,25 +552,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 								),
 								const SizedBox(height: 32),
 
-								OutlinedButton.icon(
-									onPressed: _colocarAutomatico,
-									style: OutlinedButton.styleFrom(
-										backgroundColor: !_modoManual ? context.primaryPurple.withValues(alpha: 0.1) : Colors.transparent,
-										foregroundColor: !_modoManual ? context.primaryPurple : context.textGrey,
-										side: BorderSide(color: !_modoManual ? context.primaryPurple : context.borderColor),
-										padding: const EdgeInsets.symmetric(vertical: 16),
-										shape: RoundedRectangleBorder(
-											borderRadius: BorderRadius.circular(context.radiusMd),
-										),
-									),
-									icon: const Icon(Icons.auto_awesome_rounded, size: 20),
-									label: const Text('Firma automática'),
-								),
-
-								if (!_modoManual) _selectorPosicion(),
-
-								const SizedBox(height: 12),
-
+								// 1. Firma Manual (Predeterminada)
 								OutlinedButton.icon(
 									onPressed: _colocarManual,
 									style: OutlinedButton.styleFrom(
@@ -579,7 +564,10 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 											borderRadius: BorderRadius.circular(context.radiusMd),
 										),
 									),
-									icon: const Icon(Icons.touch_app_outlined, size: 20),
+									icon: Icon(
+										_modoManual ? Icons.check_circle_rounded : Icons.touch_app_outlined, 
+										size: 20
+									),
 									label: const Text('Firma manual'),
 								),
 
@@ -629,6 +617,29 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 									),
 								],
 
+								const SizedBox(height: 12),
+
+								// 2. Firma Automática
+								OutlinedButton.icon(
+									onPressed: _colocarAutomatico,
+									style: OutlinedButton.styleFrom(
+										backgroundColor: !_modoManual ? context.primaryPurple.withValues(alpha: 0.1) : Colors.transparent,
+										foregroundColor: !_modoManual ? context.primaryPurple : context.textGrey,
+										side: BorderSide(color: !_modoManual ? context.primaryPurple : context.borderColor),
+										padding: const EdgeInsets.symmetric(vertical: 16),
+										shape: RoundedRectangleBorder(
+											borderRadius: BorderRadius.circular(context.radiusMd),
+										),
+									),
+									icon: Icon(
+										!_modoManual ? Icons.check_circle_rounded : Icons.auto_awesome_rounded, 
+										size: 20
+									),
+									label: const Text('Firma automática'),
+								),
+
+								if (!_modoManual) _selectorPosicion(),
+
 								// Selector de página (aparece cuando ya hay una firma colocada)
 								if (_posicionPorcentual != null && _totalPaginas > 1) ...[
 									const SizedBox(height: 24),
@@ -674,7 +685,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 													height: 20,
 													child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
 												)
-											: const Text('Confirmar firma'),
+											: const Text('Firma digital'),
 								),
 								const SizedBox(height: 8),
 								TextButton(

@@ -91,10 +91,10 @@ class _VerArchivosState extends State<VerArchivos> {
 		final rango = _rango;
 
 		final lista = _todos.where((a) {
-			if (q.isNotEmpty) {
-				final coincide = a.nombre.toLowerCase().contains(q) || a.fechaTexto.contains(q) || a.fechaIso.contains(q);
-				if (!coincide) return false;
-			}
+			// El buscador filtra SOLO por nombre de archivo
+			if (q.isNotEmpty && !a.nombre.toLowerCase().contains(q)) return false;
+
+			// Las fechas se filtran únicamente con el selector de rango
 			if (rango != null) {
 				final inicio = DateTime(rango.start.year, rango.start.month, rango.start.day);
 				final fin = DateTime(rango.end.year, rango.end.month, rango.end.day).add(const Duration(days: 1));

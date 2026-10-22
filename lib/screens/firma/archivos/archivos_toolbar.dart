@@ -46,7 +46,7 @@ class ArchivosToolbar extends StatelessWidget {
 							controller: controller,
 							onChanged: onCambioTexto,
 							decoration: InputDecoration(
-								hintText: 'Buscar por nombre o fecha (ej. 2026-10)',
+								hintText: 'Buscar por nombre de archivo',
 								prefixIcon: const Icon(Icons.search_rounded),
 								suffixIcon: controller.text.isEmpty
 										? null

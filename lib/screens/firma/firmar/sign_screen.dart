@@ -25,7 +25,29 @@ class SignScreen extends StatelessWidget {
 
 		try {
 			final api = ApiService();
-			final titular = await api.obtenerTitular();
+			TitularCertificado? titular;
+			
+			// --- LÓGICA DE REINTENTO ASÍNCRONO REACTIVO ---
+			int intentos = 0;
+			const maxIntentos = 5;
+			
+			while (intentos < maxIntentos) {
+				try {
+					// La llamada HTTP se queda esperando todo lo que el backend necesite.
+					// Si el backend responde con error (porque el lector está despertando),
+					// cae al catch y reintenta.
+					titular = await api.obtenerTitular();
+					break; // Si tiene éxito, sale del bucle
+				} catch (e) {
+					intentos++;
+					if (intentos >= maxIntentos) {
+						rethrow; // Si ya falló 5 veces, lanza el error real al catch principal
+					}
+					// Micro-pausa de 200ms para dar tiempo al driver del lector
+					// y no saturar el backend con peticiones instantáneas.
+					await Future.delayed(const Duration(milliseconds: 200));
+				}
+			}
 
 			if (!context.mounted) return;
 			// 2. Cerrar el modal de carga usando el rootNavigator
@@ -40,7 +62,7 @@ class SignScreen extends StatelessWidget {
 						pdfBytes: bytes,
 						nombreArchivo: nombre,
 						imagenFirmaBytes: imagenFirmaBytes,
-						nombreFirmante: titular.nombre,
+						nombreFirmante: titular!.nombre,
 						dniFirmante: titular.dni,
 					),
 				),
@@ -54,7 +76,7 @@ class SignScreen extends StatelessWidget {
 				builder: (_) => PopupFirma(
 					pdfBytes: pdfConImagen,
 					nombreArchivo: nombre,
-					rutaBackup: rutaBackup, // Aquí usamos la ruta fija
+					rutaBackup: rutaBackup,
 				),
 			);
 		} catch (e) {
