@@ -1,4 +1,5 @@
 import 'package:firmador_geresa/screens/home/home_screen.dart';
+import 'package:firmador_geresa/screens/settings/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
 
@@ -25,11 +26,11 @@ class _NaviBarState extends State<NaviBar> {
 		}
 	}
 
-	// 👇 YA NO TIENE 'index'. La posición en la lista es su índice.
+	// YA NO TIENE 'index'. La posición en la lista es su índice.
 	late final List<_TabData> _tabs = [
 		_TabData(
 			icon: Icons.home_rounded,
-			label: 'Home',
+			label: 'Inicio',
 			screen: const HomeScreen(),
 		),
 		_TabData(
@@ -54,8 +55,8 @@ class _NaviBarState extends State<NaviBar> {
 		// ),
 		_TabData(
 			icon: Icons.settings_outlined,
-			label: 'Settings',
-			screen: const Center(child: Text("Settings", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+			label: 'Config.',
+			screen: const Settings()
 		),
 	];
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sf;
 import 'package:image/image.dart' as img;
+import 'package:file_picker/file_picker.dart';
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
 
 enum PosicionFirma {
@@ -13,6 +14,14 @@ enum PosicionFirma {
 	abajoIzquierda,
 	abajoCentro,
 	abajoDerecha,
+}
+
+class DocumentoReferencial {
+	final String id;
+	final String nombre;
+	final Uint8List bytes;
+
+	DocumentoReferencial({required this.id, required this.nombre, required this.bytes});
 }
 
 class EditorFirmaModal extends StatefulWidget {
@@ -39,26 +48,101 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 	final PdfViewerController _pdfController = PdfViewerController();
 	final GlobalKey _stackKey = GlobalKey();
 
-	// Predeterminado: Modo manual
 	bool _modoManual = true;
 	bool _procesando = false;
 
-	// Tamaño de la firma en puntos PDF (el preview usa las mismas medidas y se escala)
-	static const double _anchoFirma = 190;
-	static const double _altoFirma = 50;
-	static const double _lado = 44; // lado del cuadro de la imagen
-	static const double _margen = 5; // distancia al borde de la página
+	static const double _anchoFirma = 230;
+	static const double _altoFirma = 65;
+	static const double _lado = 54; 
+	static const double _margen = 5; 
 
-	// Posición de la esquina superior izquierda, en fracción de la página
 	Offset? _posicionPorcentual;
-	int _paginaFirma = 1; // 1-based
+	int _paginaFirma = 1; 
 	int _totalPaginas = 1;
 	List<Size> _tamanos = const [];
-	
-	// Predeterminado: Arriba al centro
 	PosicionFirma _posicionAuto = PosicionFirma.arribaCentro;
 
-	// ---------- Utilidades ----------
+	Uint8List _documentoUnido = Uint8List(0);
+	List<DocumentoReferencial> _referenciales = [];
+	Offset? _posicionAutoElegida;
+
+	@override
+	void initState() {
+		super.initState();
+		_actualizarDocumentoUnido();
+	}
+
+	// ---------- Lógica de Unión de PDFs ----------
+
+	void _actualizarDocumentoUnido() async {
+		setState(() => _procesando = true);
+		try {
+			final documentoFinal = sf.PdfDocument();
+			final List<Uint8List> todosLosPdfs = [
+				widget.pdfBytes,
+				..._referenciales.map((r) => r.bytes),
+			];
+
+			sf.PdfSection? seccion;
+
+			for (final bytesPdf in todosLosPdfs) {
+				final documentoFuente = sf.PdfDocument(inputBytes: bytesPdf);
+				for (int i = 0; i < documentoFuente.pages.count; i++) {
+					final paginaFuente = documentoFuente.pages[i];
+					final template = paginaFuente.createTemplate();
+					
+					if (seccion == null || seccion.pageSettings.size != template.size) {
+						seccion = documentoFinal.sections!.add();
+						seccion.pageSettings.size = template.size;
+						seccion.pageSettings.margins.all = 0;
+					}
+					
+					seccion.pages.add().graphics.drawPdfTemplate(template, const Offset(0, 0));
+				}
+				documentoFuente.dispose();
+			}
+
+			final List<int> resultado = await documentoFinal.save();
+			documentoFinal.dispose();
+			
+			setState(() {
+				_documentoUnido = Uint8List.fromList(resultado);
+				_procesando = false;
+			});
+		} catch (e) {
+			debugPrint('Error al unir: $e');
+			setState(() => _procesando = false);
+		}
+	}
+
+	Future<void> _agregarReferencial() async {
+		final result = await FilePicker.platform.pickFiles(
+			type: FileType.custom,
+			allowedExtensions: ['pdf'],
+			withData: true,
+		);
+
+		if (result != null && result.files.single.bytes != null) {
+			final nuevo = DocumentoReferencial(
+				id: DateTime.now().millisecondsSinceEpoch.toString(),
+				nombre: result.files.single.name,
+				bytes: result.files.single.bytes!,
+			);
+			setState(() {
+				_referenciales.add(nuevo);
+				_actualizarDocumentoUnido();
+			});
+		}
+	}
+
+	void _eliminarReferencial(String id) {
+		setState(() {
+			_referenciales.removeWhere((element) => element.id == id);
+			_actualizarDocumentoUnido();
+		});
+	}
+
+	// ---------- Utilidades de Posición ----------
 
 	Offset _limitar(Offset p, int pagina) {
 		if (_tamanos.isEmpty) return p;
@@ -85,7 +169,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 
 	void _colocarAutomatico() {
 		if (_tamanos.isEmpty) return;
-		final n = _totalPaginas; // última página (usa 1 si prefieres la primera)
+		final n = _totalPaginas;
 		final s = _tamanos[n - 1];
 
 		final izq = _margen / s.width;
@@ -105,10 +189,11 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 
 		setState(() {
 			_modoManual = false;
-			_paginaFirma = n;
-			_posicionPorcentual = _limitar(pos, n);
+			_paginaFirma = 1;
+			_posicionPorcentual = _limitar(pos, 1);
+			_posicionAutoElegida = _posicionPorcentual;
 		});
-		_irAPagina(n);
+		_irAPagina(1);
 	}
 
 	void _elegirPosicionAuto(PosicionFirma p) {
@@ -120,26 +205,21 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 		setState(() {
 			_modoManual = true;
 			_posicionPorcentual = null;
+			_posicionAutoElegida = null;
 		});
 	}
 
-	// Se llama al soltar la firma sobre el visor
 	void _alSoltar(DragTargetDetails<Uint8List> details) {
 		if (!_pdfController.isReady || _tamanos.isEmpty) return;
 
 		final box = _stackKey.currentContext?.findRenderObject() as RenderBox?;
 		if (box == null) return;
 
-		// details.offset = esquina superior izquierda del feedback.
-		// Le sumamos la mitad del feedback para obtener el punto central (el cursor).
 		final centroGlobal = details.offset + const Offset(_anchoFirma / 2, _altoFirma / 2);
 		final local = box.globalToLocal(centroGlobal);
-
-		// Coordenadas del visor -> coordenadas del documento (considera zoom y scroll)
 		final inversa = Matrix4.inverted(_pdfController.value);
 		final doc = MatrixUtils.transformPoint(inversa, local);
 
-		// Página sobre la que se soltó (o la más cercana)
 		final layouts = _pdfController.layout.pageLayouts;
 		int idx = 0;
 		double mejor = double.infinity;
@@ -159,7 +239,6 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 		final cx = (doc.dx - rect.left) / rect.width;
 		final cy = (doc.dy - rect.top) / rect.height;
 
-		// El cursor queda en el centro de la firma
 		final pos = Offset(
 			cx - (_anchoFirma / size.width) / 2,
 			cy - (_altoFirma / size.height) / 2,
@@ -171,16 +250,13 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 		});
 	}
 
-	// Calcula si el nombre debe ir en 1 o 2 líneas
 	List<String> _calcularNombreLineas(String nombre) {
-		// Formatear a Tipo Título (Primera letra mayúscula, resto minúsculas)
 		final textoFormateado = nombre.trim().split(' ').map((palabra) {
 			if (palabra.isEmpty) return '';
 			return palabra[0].toUpperCase() + palabra.substring(1).toLowerCase();
 		}).join(' ');
 
-		// 20 caracteres es el límite aproximado para el ancho del sello en puntos PDF
-		if (textoFormateado.length <= 20) return [textoFormateado];
+		if (textoFormateado.length <= 22) return [textoFormateado];
 
 		final palabras = textoFormateado.split(' ');
 		if (palabras.length == 1) return [textoFormateado];
@@ -190,24 +266,25 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 
 		for (int i = 0; i < palabras.length; i++) {
 			largoActual += palabras[i].length + 1;
-			if (largoActual > 20) {
+			if (largoActual > 22) {
 				mejorCorte = i;
 				break;
 			}
 		}
 
 		if (mejorCorte <= 0) return [textoFormateado];
-
-		final linea1 = palabras.sublist(0, mejorCorte).join(' ');
-		final linea2 = palabras.sublist(mejorCorte).join(' ');
-		
-		return [linea1, linea2];
+		return [
+			palabras.sublist(0, mejorCorte).join(' '),
+			palabras.sublist(mejorCorte).join(' ')
+		];
 	}
 
 	// ---------- Confirmar ----------
 
 	Future<void> _confirmar() async {
-		if (_posicionPorcentual == null) return;
+		if (_modoManual && _posicionPorcentual == null) return;
+		if (!_modoManual && _posicionAutoElegida == null) return;
+		
 		setState(() => _procesando = true);
 		sf.PdfDocument? document;
 		try {
@@ -216,49 +293,52 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 			final horaStr = '${ahora.hour.toString().padLeft(2, '0')}:${ahora.minute.toString().padLeft(2, '0')}';
 
 			final decoded = img.decodeImage(widget.imagenFirmaBytes);
-			if (decoded == null) throw Exception('No se pudo decodificar la imagen de la firma');
+			if (decoded == null) throw Exception('No se pudo decodificar la imagen');
 			final bitmap = sf.PdfBitmap(img.encodePng(decoded));
 
-			document = sf.PdfDocument(inputBytes: widget.pdfBytes);
-			final page = document.pages[_paginaFirma - 1];
-
-			final x = _posicionPorcentual!.dx * page.size.width;
-			final y = _posicionPorcentual!.dy * page.size.height;
-
-			final g = page.graphics;
-
-			// Imagen con proporción original, contenida en un cuadro de _lado x _lado
-			final ratio = decoded.width / decoded.height;
-			double w = _lado, h = _lado;
-			if (ratio > 1) {
-				h = _lado / ratio;
-			} else {
-				w = _lado * ratio;
-			}
-			g.drawImage(
-				bitmap,
-				Rect.fromLTWH(x + (_lado - w) / 2, y + (_altoFirma - h) / 2, w, h),
-			);
-
-			// Texto (mismas posiciones que el preview)
-			final fuente = sf.PdfStandardFont(sf.PdfFontFamily.helvetica, 6);
-			final negrita = sf.PdfStandardFont(sf.PdfFontFamily.helvetica, 7.5, style: sf.PdfFontStyle.bold);
-			final negro = sf.PdfSolidBrush(sf.PdfColor(0, 0, 0));
-			final tx = x + _lado + 8;
-
-			final lineasNombre = _calcularNombreLineas(widget.nombreFirmante);
-			final esDobleLinea = lineasNombre.length > 1;
-
-			g.drawString('Firmado digitalmente por:', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 7.5, 0, 0));
-			g.drawString(lineasNombre[0], negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + (esDobleLinea ? 13.5 : 16.7), 0, 0));
+			document = sf.PdfDocument(inputBytes: _documentoUnido);
 			
-			if (esDobleLinea) {
-				g.drawString(lineasNombre[1], negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + 21, 0, 0));
-				g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 28, 0, 0));
-				g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 35, 0, 0));
-			} else {
-				g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 25.7, 0, 0));
-				g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 32.9, 0, 0));
+			final paginasAProcesar = _modoManual 
+				? [_paginaFirma - 1] 
+				: List.generate(document.pages.count, (index) => index); 
+
+			for (final index in paginasAProcesar) {
+				final page = document.pages[index];
+				final pos = _modoManual ? _posicionPorcentual! : _posicionAutoElegida!;
+				
+				final x = pos.dx * page.size.width;
+				final y = pos.dy * page.size.height;
+				final g = page.graphics;
+
+				final ratio = decoded.width / decoded.height;
+				double w = _lado, h = _lado;
+				if (ratio > 1) { h = _lado / ratio; } else { w = _lado * ratio; }
+				g.drawImage(
+					bitmap,
+					Rect.fromLTWH(x + (_lado - w) / 2, y + (_altoFirma - h) / 2, w, h),
+				);
+
+				final fuente = sf.PdfStandardFont(sf.PdfFontFamily.helvetica, 6.5);
+				final negrita = sf.PdfStandardFont(sf.PdfFontFamily.helvetica, 8, style: sf.PdfFontStyle.bold);
+				final negro = sf.PdfSolidBrush(sf.PdfColor(0, 0, 0));
+				final tx = x + _lado + 8;
+
+				final lineasNombre = _calcularNombreLineas(widget.nombreFirmante);
+				final esDobleLinea = lineasNombre.length > 1;
+
+				g.drawString('Firmado digitalmente por:', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 8, 0, 0));
+				g.drawString(lineasNombre[0], negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + (esDobleLinea ? 15 : 19), 0, 0));
+				
+				if (esDobleLinea) {
+					g.drawString(lineasNombre[1], negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + 24, 0, 0));
+					g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 33, 0, 0));
+					g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 41, 0, 0));
+					g.drawString('Folio ${index + 1} de $_totalPaginas', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 49, 0, 0));
+				} else {
+					g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 29, 0, 0));
+					g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 37, 0, 0));
+					g.drawString('Folio ${index + 1} de $_totalPaginas', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 45, 0, 0));
+				}
 			}
 
 			final List<int> resultado = await document.save();
@@ -288,14 +368,13 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 				filterQuality: FilterQuality.high,
 			);
 
-	// Preview con medidas en "puntos PDF" (190 x 50). Luego se escala con FittedBox.
 	Widget _firmaVisual() {
 		final ahora = DateTime.now();
 		final fechaStr = '${ahora.day.toString().padLeft(2, '0')}/${ahora.month.toString().padLeft(2, '0')}/${ahora.year}';
 		final horaStr = '${ahora.hour.toString().padLeft(2, '0')}:${ahora.minute.toString().padLeft(2, '0')}';
 		
-		const estiloNormal = TextStyle(fontSize: 6, color: Colors.black, height: 1.1);
-		const estiloNegrita = TextStyle(fontSize: 7.5, color: Colors.black, fontWeight: FontWeight.bold, height: 1.1);
+		const estiloNormal = TextStyle(fontSize: 6.5, color: Colors.black, height: 1.1);
+		const estiloNegrita = TextStyle(fontSize: 8, color: Colors.black, fontWeight: FontWeight.bold, height: 1.1);
 
 		final lineasNombre = _calcularNombreLineas(widget.nombreFirmante);
 		final esDobleLinea = lineasNombre.length > 1;
@@ -318,6 +397,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 								if (esDobleLinea) Text(lineasNombre[1], style: estiloNegrita),
 								Text('FIR (DNI ${widget.dniFirmante}) hard', style: estiloNormal),
 								Text('Fecha: $fechaStr - $horaStr', style: estiloNormal),
+								Text('Folio $_paginaFirma de $_totalPaginas', style: estiloNormal),
 							],
 						),
 					),
@@ -336,9 +416,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 				child: Padding(
 					padding: const EdgeInsets.all(6),
 					child: Icon(
-						seleccionado
-								? Icons.radio_button_checked_rounded
-								: Icons.radio_button_unchecked_rounded,
+						seleccionado ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
 						size: 22,
 						color: seleccionado ? context.primaryPurple : context.textGrey,
 					),
@@ -360,11 +438,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 				children: [
 					Text(
 						'Posición en la página',
-						style: TextStyle(
-							fontSize: 12,
-							fontWeight: FontWeight.w600,
-							color: context.textGrey,
-						),
+						style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textGrey),
 					),
 					const SizedBox(height: 8),
 					Row(
@@ -402,6 +476,105 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 		);
 	}
 
+	Widget _documentosSidebar() {
+		return Container(
+			width: 220,
+			decoration: BoxDecoration(
+				color: context.surfaceGrey.withValues(alpha: 0.5),
+				border: Border(right: BorderSide(color: context.borderColor)),
+			),
+			child: Column(
+				children: [
+					Container(
+						padding: const EdgeInsets.all(16),
+						child: Text(
+							'Documentos',
+							style: TextStyle(fontWeight: FontWeight.bold, color: context.textDark),
+						),
+					),
+					
+					// Documento principal (fijo)
+					Container(
+						margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+						padding: const EdgeInsets.all(8),
+						decoration: BoxDecoration(
+							color: context.surfaceWhite,
+							borderRadius: BorderRadius.circular(8),
+							border: Border.all(color: context.primaryPurple),
+						),
+						child: Row(
+							children: [
+								Icon(Icons.lock_outline, size: 20, color: context.primaryPurple),
+								const SizedBox(width: 8),
+								Expanded(
+									child: Text(
+										widget.nombreArchivo,
+										maxLines: 2,
+										overflow: TextOverflow.ellipsis,
+										style: TextStyle(fontSize: 12, color: context.textDark),
+									),
+								),
+							],
+						),
+					),
+
+					// Lista de documentos referenciales (arrastrables)
+					Expanded(
+						child: ReorderableListView.builder(
+							buildDefaultDragHandles: false, // Ocultar el icono de arrastre por defecto
+							itemCount: _referenciales.length,
+							onReorder: (oldIndex, newIndex) {
+								setState(() {
+									if (newIndex > oldIndex) newIndex -= 1;
+									final item = _referenciales.removeAt(oldIndex);
+									_referenciales.insert(newIndex, item);
+									_actualizarDocumentoUnido();
+								});
+							},
+							itemBuilder: (context, index) {
+								final doc = _referenciales[index];
+								return Container(
+									key: ValueKey(doc.id),
+									margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+									padding: const EdgeInsets.all(8),
+									decoration: BoxDecoration(
+										color: context.surfaceWhite,
+										borderRadius: BorderRadius.circular(8),
+										border: Border.all(color: context.borderColor),
+									),
+									child: Row(
+										children: [
+											// El arrastre solo se activa si tocas el icono de la izquierda
+											ReorderableDragStartListener(
+												index: index,
+												child: Icon(Icons.drag_indicator, size: 20, color: context.textGrey),
+											),
+											const SizedBox(width: 8),
+											Expanded(
+												child: Text(
+													doc.nombre,
+													maxLines: 2,
+													overflow: TextOverflow.ellipsis,
+													style: TextStyle(fontSize: 12, color: context.textDark),
+												),
+											),
+											IconButton(
+												icon: const Icon(Icons.close, size: 16, color: Colors.red),
+												onPressed: () => _eliminarReferencial(doc.id),
+												padding: EdgeInsets.zero,
+												constraints: const BoxConstraints(),
+											),
+										],
+									),
+								);
+							},
+						),
+					),
+				],
+			),
+		);
+	}
+
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
@@ -414,6 +587,8 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 			),
 			body: Row(
 				children: [
+					if (_referenciales.isNotEmpty) _documentosSidebar(),
+					
 					Expanded(
 						child: Container(
 							margin: const EdgeInsets.all(24),
@@ -427,65 +602,79 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 								child: Stack(
 									key: _stackKey,
 									children: [
-										PdfViewer.data(
-											widget.pdfBytes,
-											sourceName: widget.nombreArchivo,
-											controller: _pdfController,
-											params: PdfViewerParams(
-												backgroundColor: context.surfaceGrey,
-												onViewerReady: (document, controller) {
-													setState(() {
-														_totalPaginas = document.pages.length;
-														_tamanos = document.pages
-																.map((p) => Size(p.width, p.height))
-																.toList();
-													});
-													// NOTA: Se quitó la llamada a _colocarAutomatico() aquí
-													// para respetar que el modo manual sea el predeterminado.
-												},
-												pageOverlaysBuilder: (context, pageRect, page) {
-													if (_posicionPorcentual == null || page.pageNumber != _paginaFirma) {
-														return const [];
-													}
-
-													// Pantalla (o documento) por cada punto PDF
-													final escala = pageRect.width / page.width;
-
-													return [
-														Positioned(
-															left: _posicionPorcentual!.dx * pageRect.width,
-															top: _posicionPorcentual!.dy * pageRect.height,
-															child: GestureDetector(
-																onPanUpdate: _modoManual
-																		? (details) {
-																				setState(() {
-																					final nuevo = Offset(
-																						_posicionPorcentual!.dx + details.delta.dx / pageRect.width,
-																						_posicionPorcentual!.dy + details.delta.dy / pageRect.height,
-																					);
-																					_posicionPorcentual = _limitar(nuevo, _paginaFirma);
-																				});
-																			}
-																		: null,
-																child: MouseRegion(
-																	cursor: _modoManual ? SystemMouseCursors.grab : SystemMouseCursors.basic,
-																	child: SizedBox(
-																		width: _anchoFirma * escala,
-																		height: _altoFirma * escala,
-																		child: FittedBox(
-																			fit: BoxFit.fill,
-																			child: _firmaVisual(),
+										if (_documentoUnido.isNotEmpty)
+											PdfViewer.data(
+												key: ValueKey(_documentoUnido.length),
+												_documentoUnido,
+												sourceName: widget.nombreArchivo,
+												controller: _pdfController,
+												params: PdfViewerParams(
+													backgroundColor: context.surfaceGrey,
+													onViewerReady: (document, controller) {
+														setState(() {
+															_totalPaginas = document.pages.length;
+															_tamanos = document.pages.map((p) => Size(p.width, p.height)).toList();
+															if (_modoManual && _posicionPorcentual != null) {
+																_posicionPorcentual = _limitar(_posicionPorcentual!, _paginaFirma);
+															}
+														});
+													},
+													pageOverlaysBuilder: (context, pageRect, page) {
+														if (_modoManual) {
+															if (_posicionPorcentual == null || page.pageNumber != _paginaFirma) return const [];
+															final escala = pageRect.width / page.width;
+															return [
+																Positioned(
+																	left: _posicionPorcentual!.dx * pageRect.width,
+																	top: _posicionPorcentual!.dy * pageRect.height,
+																	child: GestureDetector(
+																		onPanUpdate: (details) {
+																			setState(() {
+																				final nuevo = Offset(
+																					_posicionPorcentual!.dx + details.delta.dx / pageRect.width,
+																					_posicionPorcentual!.dy + details.delta.dy / pageRect.height,
+																				);
+																				_posicionPorcentual = _limitar(nuevo, _paginaFirma);
+																			});
+																		},
+																		child: MouseRegion(
+																			cursor: SystemMouseCursors.grab,
+																			child: SizedBox(
+																				width: _anchoFirma * escala,
+																				height: _altoFirma * escala,
+																				child: FittedBox(
+																					fit: BoxFit.fill,
+																					child: _firmaVisual(),
+																				),
+																			),
 																		),
 																	),
 																),
-															),
-														),
-													];
-												},
+															];
+														} else {
+															if (_posicionAutoElegida == null) return const [];
+															final escala = pageRect.width / page.width;
+															return [
+																Positioned(
+																	left: _posicionAutoElegida!.dx * pageRect.width,
+																	top: _posicionAutoElegida!.dy * pageRect.height,
+																	child: IgnorePointer(
+																		child: SizedBox(
+																			width: _anchoFirma * escala,
+																			height: _altoFirma * escala,
+																			child: FittedBox(
+																				fit: BoxFit.fill,
+																				child: _firmaVisual(),
+																			),
+																		),
+																	),
+																),
+															];
+														}
+													},
+												),
 											),
-										),
 
-										// Zona donde se suelta la firma (activa en modo manual)
 										if (_modoManual)
 											Positioned.fill(
 												child: DragTarget<Uint8List>(
@@ -502,7 +691,6 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 												),
 											),
 
-										// Controles de zoom
 										Positioned(
 											top: 12,
 											right: 12,
@@ -522,6 +710,21 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 												],
 											),
 										),
+
+										Positioned(
+											bottom: 24,
+											left: 0,
+											right: 0,
+											child: Center(
+												child: FloatingActionButton(
+													onPressed: _agregarReferencial,
+													backgroundColor: context.primaryPurple,
+													foregroundColor: Colors.white,
+													tooltip: 'Añadir documento referencial',
+													child: const Icon(Icons.attach_file_rounded),
+												),
+											),
+										),
 									],
 								),
 							),
@@ -539,11 +742,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 							children: [
 								Text(
 									'Firma del documento',
-									style: TextStyle(
-										fontSize: 20,
-										fontWeight: FontWeight.w700,
-										color: context.textDark,
-									),
+									style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textDark),
 								),
 								const SizedBox(height: 8),
 								Text(
@@ -552,7 +751,6 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 								),
 								const SizedBox(height: 32),
 
-								// 1. Firma Manual (Predeterminada)
 								OutlinedButton.icon(
 									onPressed: _colocarManual,
 									style: OutlinedButton.styleFrom(
@@ -560,14 +758,9 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 										foregroundColor: _modoManual ? context.primaryPurple : context.textGrey,
 										side: BorderSide(color: _modoManual ? context.primaryPurple : context.borderColor),
 										padding: const EdgeInsets.symmetric(vertical: 16),
-										shape: RoundedRectangleBorder(
-											borderRadius: BorderRadius.circular(context.radiusMd),
-										),
+										shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.radiusMd)),
 									),
-									icon: Icon(
-										_modoManual ? Icons.check_circle_rounded : Icons.touch_app_outlined, 
-										size: 20
-									),
+									icon: Icon(_modoManual ? Icons.check_circle_rounded : Icons.touch_app_outlined, size: 20),
 									label: const Text('Firma manual'),
 								),
 
@@ -576,20 +769,12 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 									Center(
 										child: Draggable<Uint8List>(
 											data: widget.imagenFirmaBytes,
-											// El centro del feedback queda exactamente bajo el cursor
-											dragAnchorStrategy: (draggable, context, position) =>
-													const Offset(_anchoFirma / 2, _altoFirma / 2),
+											dragAnchorStrategy: (draggable, context, position) => const Offset(_anchoFirma / 2, _altoFirma / 2),
 											feedback: Material(
 												color: Colors.transparent,
-												child: Opacity(
-													opacity: 0.85,
-													child: _firmaVisual(),
-												),
+												child: Opacity(opacity: 0.85, child: _firmaVisual()),
 											),
-											childWhenDragging: Opacity(
-												opacity: 0.3,
-												child: _imagenFirma(size: 50),
-											),
+											childWhenDragging: Opacity(opacity: 0.3, child: _imagenFirma(size: 50)),
 											child: Container(
 												padding: const EdgeInsets.all(8),
 												decoration: BoxDecoration(
@@ -604,11 +789,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 														Text(
 															'Arrastra la firma hacia\nel documento',
 															textAlign: TextAlign.center,
-															style: TextStyle(
-																fontSize: 12,
-																color: context.textGrey,
-																fontWeight: FontWeight.w500,
-															),
+															style: TextStyle(fontSize: 12, color: context.textGrey, fontWeight: FontWeight.w500),
 														),
 													],
 												),
@@ -619,7 +800,6 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 
 								const SizedBox(height: 12),
 
-								// 2. Firma Automática
 								OutlinedButton.icon(
 									onPressed: _colocarAutomatico,
 									style: OutlinedButton.styleFrom(
@@ -627,21 +807,15 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 										foregroundColor: !_modoManual ? context.primaryPurple : context.textGrey,
 										side: BorderSide(color: !_modoManual ? context.primaryPurple : context.borderColor),
 										padding: const EdgeInsets.symmetric(vertical: 16),
-										shape: RoundedRectangleBorder(
-											borderRadius: BorderRadius.circular(context.radiusMd),
-										),
+										shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.radiusMd)),
 									),
-									icon: Icon(
-										!_modoManual ? Icons.check_circle_rounded : Icons.auto_awesome_rounded, 
-										size: 20
-									),
+									icon: Icon(!_modoManual ? Icons.check_circle_rounded : Icons.auto_awesome_rounded, size: 20),
 									label: const Text('Firma automática'),
 								),
 
 								if (!_modoManual) _selectorPosicion(),
 
-								// Selector de página (aparece cuando ya hay una firma colocada)
-								if (_posicionPorcentual != null && _totalPaginas > 1) ...[
+								if (_modoManual && _posicionPorcentual != null && _totalPaginas > 1) ...[
 									const SizedBox(height: 24),
 									Row(
 										mainAxisAlignment: MainAxisAlignment.center,
@@ -652,11 +826,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 											),
 											Text(
 												'Página $_paginaFirma de $_totalPaginas',
-												style: TextStyle(
-													fontSize: 14,
-													fontWeight: FontWeight.w600,
-													color: context.textDark,
-												),
+												style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: context.textDark),
 											),
 											IconButton(
 												onPressed: _paginaFirma < _totalPaginas ? () => _cambiarPagina(1) : null,
@@ -669,30 +839,24 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 								const Spacer(),
 
 								ElevatedButton(
-									onPressed: _procesando || _posicionPorcentual == null ? null : _confirmar,
+									onPressed: _procesando || (_modoManual && _posicionPorcentual == null) || (!_modoManual && _posicionAutoElegida == null) 
+										? null 
+										: _confirmar,
 									style: ElevatedButton.styleFrom(
 										backgroundColor: context.primaryPurple,
 										foregroundColor: Colors.white,
 										elevation: 0,
 										padding: const EdgeInsets.symmetric(vertical: 16),
-										shape: RoundedRectangleBorder(
-											borderRadius: BorderRadius.circular(context.radiusPill),
-										),
+										shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(context.radiusPill)),
 									),
 									child: _procesando
-											? const SizedBox(
-													width: 20,
-													height: 20,
-													child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-												)
-											: const Text('Firmar documento'),
+											? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+											: const Text('Confirmar firma'),
 								),
 								const SizedBox(height: 8),
 								TextButton(
 									onPressed: () => Navigator.of(context).pop(null),
-									style: TextButton.styleFrom(
-										foregroundColor: context.textGrey,
-									),
+									style: TextButton.styleFrom(foregroundColor: context.textGrey),
 									child: const Text('Cancelar'),
 								),
 							],
