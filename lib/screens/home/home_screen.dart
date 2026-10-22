@@ -16,7 +16,7 @@ class HomeScreen extends StatelessWidget {
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFDCFCE7),
 						icono: const Icon(Icons.verified_user_rounded, size: 40, color: Color(0xFF10B981)),
-						titulo: 'Verificar Firma Digital',
+						titulo: 'Firma ditital GERESA',
 						descripcion: 'Revisa la validez de las firmas digitales en tus documentos.',
 						onTap: () {
 							// Ahora este Navigator.push se ejecuta DENTRO del Navigator anidado,

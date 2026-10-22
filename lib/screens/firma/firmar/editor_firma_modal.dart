@@ -685,7 +685,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 													height: 20,
 													child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
 												)
-											: const Text('Firma digital'),
+											: const Text('Firmar documento'),
 								),
 								const SizedBox(height: 8),
 								TextButton(
