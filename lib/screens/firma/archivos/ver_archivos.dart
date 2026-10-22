@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
+import 'package:firmador_geresa/data/rutas.dart';
 import 'package:flutter/material.dart';
 
 import 'archivo_menu_acciones.dart';
@@ -18,7 +20,7 @@ import 'visor_pdf_dialog.dart';
 class VerArchivos extends StatefulWidget {
 	/// Ruta por defecto de la carpeta donde están los PDF. Cámbiala aquí
 	/// o pásala por parámetro: VerArchivos(rutaCarpeta: '...')
-	static const String rutaPorDefecto = r'G:\My Drive\Documentos\certificados';
+	static const String rutaPorDefecto = rutaCarpetas;
 
 	final String rutaCarpeta;
 
@@ -293,16 +295,39 @@ class _VerArchivosState extends State<VerArchivos> {
 	// ==========================================
 	// FILTROS / ORDEN / SELECCIÓN
 	// ==========================================
+	/// Selector de rango con calendar_date_picker2.
+	/// Si el usuario solo marca un día, se filtra ese día completo.
 	Future<void> _elegirRango() async {
-		final r = await showDateRangePicker(
+		final actual = _rango;
+
+		final valores = await showCalendarDatePicker2Dialog(
 			context: context,
-			firstDate: DateTime(2000),
-			lastDate: DateTime(2100),
-			initialDateRange: _rango,
+			config: CalendarDatePicker2WithActionButtonsConfig(
+				calendarType: CalendarDatePicker2Type.range,
+				firstDate: DateTime(2000),
+				lastDate: DateTime(2100),
+				firstDayOfWeek: 1,
+				weekdayLabels: const ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+				selectedDayHighlightColor: context.primaryPurple,
+				centerAlignModePicker: true,
+				okButton: Text('Aplicar', style: TextStyle(color: context.primaryPurple, fontWeight: FontWeight.w700)),
+				cancelButton: Text('Cancelar', style: TextStyle(color: context.textGrey, fontWeight: FontWeight.w600)),
+			),
+			dialogSize: const Size(340, 420),
+			borderRadius: BorderRadius.circular(context.radiusMd),
+			dialogBackgroundColor: context.surfaceWhite,
+			value: actual == null ? <DateTime?>[] : <DateTime?>[actual.start, actual.end],
 		);
-		if (r == null) return;
+
+		if (valores == null || !mounted) return;
+		final fechas = valores.whereType<DateTime>().toList();
+		if (fechas.isEmpty) return;
+
+		final inicio = fechas.first;
+		final fin = fechas.length > 1 ? fechas.last : fechas.first;
+
 		setState(() {
-			_rango = r;
+			_rango = DateTimeRange(start: inicio, end: fin);
 			_pagina = 0;
 		});
 	}
@@ -356,7 +381,7 @@ class _VerArchivosState extends State<VerArchivos> {
 		final visibles = filtrados.skip(pagina * _porPagina).take(_porPagina).toList();
 
 		return Scaffold(
-			appBar: AppBar(title: const Text('Gestionar archivos')),
+			appBar: AppBar(title: const Text('Firmar Documento')),
 			backgroundColor: context.backgroundLight,
 			body: Padding(
 				padding: EdgeInsets.all(context.spaceLg),

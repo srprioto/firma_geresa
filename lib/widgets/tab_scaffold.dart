@@ -40,14 +40,14 @@ class TabScaffold extends StatelessWidget {
 							),
 						),
 						Positioned(
-							bottom: 12,
+							bottom: 0,
 							left: 0,
 							right: 0,
 							child: Center(
 								child: FractionallySizedBox(
 									widthFactor: 0.7,
 									child: Container(
-										height: 56,
+										height: 40,
 										decoration: BoxDecoration(
 											color: context.surfaceGrey,
 											borderRadius: BorderRadius.circular(context.radiusLg),
@@ -88,6 +88,9 @@ class TabScaffold extends StatelessWidget {
 								),
 							),
 						),
+
+						
+
 					],
 				),
 			),

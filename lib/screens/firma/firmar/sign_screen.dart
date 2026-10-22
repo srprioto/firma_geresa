@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:firmador_geresa/data/rutas.dart';
 import 'package:firmador_geresa/screens/firma/firmar/editor_firma_modal.dart';
 import 'package:firmador_geresa/screens/firma/firmar/popup_firma.dart';
 import 'package:firmador_geresa/widgets/file_drop_zone.dart';
@@ -9,7 +10,7 @@ import 'package:firmador_geresa/services/api_service.dart';
 
 class SignScreen extends StatelessWidget {
 	// Variable fija para el guardado silencioso
-	final String rutaBackup = 'C:/Users/RenatoLuna/Desktop/backup_firmas';
+	final String rutaBackup = rutaCarpetas;
 
 	const SignScreen({super.key});
 

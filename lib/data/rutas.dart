@@ -1,0 +1,1 @@
+const String rutaCarpetas = 'C:/Users/RenatoLuna/Desktop/backup_firmas';
