@@ -19,16 +19,12 @@ class Settings extends StatelessWidget {
 					icon: Icons.settings_outlined,
 					screen: GeneralStgs(),
 				),
+
 				SettingsTabItem(
-					title: 'Nextcloude',
-					icon: Icons.settings_outlined,
-					screen: GeneralStgs(),
+					title: 'Profile',
+					icon: Icons.person_outline,
+					screen: Center(child: Text('Componentes de Profile aquí')),
 				),
-				// SettingsTabItem(
-				// 	title: 'Profile',
-				// 	icon: Icons.person_outline,
-				// 	screen: Center(child: Text('Componentes de Profile aquí')),
-				// ),
 				// SettingsTabItem(
 				// 	title: 'Data',
 				// 	icon: Icons.dns_outlined,

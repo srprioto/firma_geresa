@@ -1,11 +1,14 @@
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
+import 'package:firmador_geresa/assets/tools/json_storage.dart';
 import 'package:firmador_geresa/screens/nav/navi_bar.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:material_ui/material_ui.dart' as mui;
 
-void main() {
+void main() async {
+	WidgetsFlutterBinding.ensureInitialized();
+	await JsonStorage.init(); 
 	runApp(const FirmadorApp());
 }
 

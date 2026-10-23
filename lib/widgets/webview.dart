@@ -6,23 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter_windows/webview_flutter_windows.dart';
 
-/// WebView para Windows de escritorio (WebView2) con datos persistentes:
-/// cookies, sesiones y almacenamiento local se conservan entre ejecuciones.
-///
-/// Uso básico:
-///   const WebViewEscritorio(urlInicial: 'https://tusitio.com')
-///
-/// Uso portable (datos junto al .exe):
-///   WebViewEscritorio(
-///     urlInicial: 'https://tusitio.com',
-///     carpetaDatos: '${File(Platform.resolvedExecutable).parent.path}\\datos_web',
-///   )
 class WebView extends StatefulWidget {
 	final String url;
 	final String titulo;
 
 	/// Carpeta donde se guardan cookies y datos. Si es null usa
-	/// %LOCALAPPDATA%\FirmadorGeresa\webview
+	/// %LOCALAPPDATA%\gtk\webview
 	final String? carpetaDatos;
 
 	/// Carpeta con el WebView2 Runtime "fixed version" (opcional, solo si
@@ -73,7 +62,7 @@ class _WebViewState extends State<WebView> with AutomaticKeepAliveClientMixin {
 	// ==========================================
 	String _carpetaPorDefecto() {
 		final base = Platform.environment['LOCALAPPDATA'] ?? Directory.systemTemp.path;
-		return '$base\\FirmadorGeresa\\webview';
+		return '$base\\gtk\\webview';
 	}
 
 	Future<void> _inicializarEntorno() async {
