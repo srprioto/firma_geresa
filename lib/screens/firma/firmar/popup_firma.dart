@@ -100,7 +100,7 @@ class _PopupFirmaState extends State<PopupFirma> {
 				try {
 					final nombreBase = _limpiarNombre(widget.nombreArchivo);
 					final timestamp = _obtenerTimestamp();
-					final nombreBackup = 'firmado_${nombreBase}_$timestamp.pdf';
+					final nombreBackup = '${nombreBase}_$timestamp.pdf';
 					
 					final destino = File(
 						'${widget.rutaBackup}${Platform.pathSeparator}$nombreBackup',
@@ -132,7 +132,7 @@ class _PopupFirmaState extends State<PopupFirma> {
 
 		// 1. Sugerir nombre inicial con [FG]
 		final nombreBase = _limpiarNombre(widget.nombreArchivo);
-		final nombreSugerido = 'firmado_${nombreBase} [FG].pdf';
+		final nombreSugerido = '${nombreBase} [FG].pdf';
 
 		final rutaDestino = await FilePicker.platform.saveFile(
 			dialogTitle: 'Guardar documento firmado',
@@ -151,7 +151,7 @@ class _PopupFirmaState extends State<PopupFirma> {
 			// Forzamos el nombre con la lógica del helper
 			final nombreFinal = _forzarNombreCorrecto(
 				rutaDestino, 
-				nombreFallback: 'firmado_${nombreBase}' // Nombre por si borra todo
+				nombreFallback: '${nombreBase}' // Nombre por si borra todo
 			);
 			
 			// Armamos la ruta final

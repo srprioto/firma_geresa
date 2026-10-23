@@ -1,16 +1,16 @@
-import 'package:firmador_geresa/assets/tools/json_storage.dart';
+import 'package:firmador_geresa/assets/tools/files_manag/json_storage.dart';
 import 'package:firmador_geresa/widgets/forms/input_editable.dart';
 import 'package:flutter/material.dart';
 
 
-class GeneralStgs extends StatefulWidget {
-	const GeneralStgs({super.key});
+class NextcloudStgs extends StatefulWidget {
+	const NextcloudStgs({super.key});
 
 	@override
-	State<GeneralStgs> createState() => _GeneralStgsState();
+	State<NextcloudStgs> createState() => _NextcloudStgsState();
 }
 
-class _GeneralStgsState extends State<GeneralStgs> {
+class _NextcloudStgsState extends State<NextcloudStgs> {
 	// Valor actual de la ruta
 	String _rutaNextCloud = '';
 
@@ -27,7 +27,7 @@ class _GeneralStgsState extends State<GeneralStgs> {
 	@override
 	Widget build(BuildContext context) {
 		return Padding(
-			padding: const EdgeInsets.all(24.0),
+			padding: const EdgeInsets.only(top: 0, right: 24.0, bottom: 24.0, left: 24.0),
 			child: Column(
 				crossAxisAlignment: CrossAxisAlignment.start,
 				children: [
@@ -55,8 +55,16 @@ class _GeneralStgsState extends State<GeneralStgs> {
 							}
 						},
 					),
+
+
+
+
+					
 				],
 			),
 		);
 	}
 }
+
+
+

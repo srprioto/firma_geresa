@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:firmador_geresa/data/rutas.dart';
+import 'package:firmador_geresa/assets/tools/files_manag/file_route.dart';
+
 
 class JsonStorage {
 	// Ruta exacta donde se guardará el archivo
-	static const String _folderPath = folderPath;
+	static String get _folderPath => folderPath;
 	static const String _fileName = 'data.json';
 
 	// Ruta completa del archivo

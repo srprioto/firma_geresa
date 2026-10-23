@@ -333,11 +333,11 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 					g.drawString(lineasNombre[1], negrita, brush: negro, bounds: Rect.fromLTWH(tx, y + 24, 0, 0));
 					g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 33, 0, 0));
 					g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 41, 0, 0));
-					g.drawString('Folio ${index + 1} de $_totalPaginas', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 49, 0, 0));
+					g.drawString('Folios: $_totalPaginas', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 49, 0, 0));
 				} else {
 					g.drawString('FIR (DNI ${widget.dniFirmante}) hard', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 29, 0, 0));
 					g.drawString('Fecha: $fechaStr - $horaStr', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 37, 0, 0));
-					g.drawString('Folio ${index + 1} de $_totalPaginas', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 45, 0, 0));
+					g.drawString('Folios: $_totalPaginas', fuente, brush: negro, bounds: Rect.fromLTWH(tx, y + 45, 0, 0));
 				}
 			}
 
@@ -397,7 +397,7 @@ class _EditorFirmaModalState extends State<EditorFirmaModal> {
 								if (esDobleLinea) Text(lineasNombre[1], style: estiloNegrita),
 								Text('FIR (DNI ${widget.dniFirmante}) hard', style: estiloNormal),
 								Text('Fecha: $fechaStr - $horaStr', style: estiloNormal),
-								Text('Folio $_paginaFirma de $_totalPaginas', style: estiloNormal),
+								Text('Folios: $_totalPaginas', style: estiloNormal),
 							],
 						),
 					),

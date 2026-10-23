@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
-import 'package:firmador_geresa/data/rutas.dart';
+import 'package:firmador_geresa/assets/tools/files_manag/folder_path_nxc.dart';
 import 'package:flutter/material.dart';
 
 import 'archivo_menu_acciones.dart';
@@ -17,20 +17,19 @@ import 'archivos_tabla.dart';
 import 'archivos_toolbar.dart';
 import 'visor_pdf_dialog.dart';
 
+
 class VerArchivos extends StatefulWidget {
-	/// Ruta por defecto de la carpeta donde están los PDF. Cámbiala aquí
-	/// o pásala por parámetro: VerArchivos(rutaCarpeta: '...')
-	static const String rutaPorDefecto = rutaCarpetas;
-
-	final String rutaCarpeta;
-
-	const VerArchivos({super.key, this.rutaCarpeta = rutaPorDefecto});
+	const VerArchivos({super.key});
 
 	@override
 	State<VerArchivos> createState() => _VerArchivosState();
 }
 
 class _VerArchivosState extends State<VerArchivos> {
+
+	static const String rutaPorDefecto = rutaCarpetas;
+
+
 	static const int _porPagina = 20;
 
 	final ArchivosService _service = ArchivosService();
@@ -68,7 +67,7 @@ class _VerArchivosState extends State<VerArchivos> {
 	Future<void> _cargar() async {
 		if (_todos.isEmpty) setState(() => _cargando = true);
 		try {
-			final lista = await _service.listar(widget.rutaCarpeta);
+			final lista = await _service.listar(rutaPorDefecto);
 			if (!mounted) return;
 			setState(() {
 				_todos = lista;
@@ -455,7 +454,7 @@ class _VerArchivosState extends State<VerArchivos> {
 			return _estado(
 				icono: Icons.folder_off_outlined,
 				titulo: 'No se pudo leer la carpeta',
-				mensaje: '${widget.rutaCarpeta}\n$_error',
+				mensaje: '${rutaPorDefecto}\n$_error',
 				textoBoton: 'Reintentar',
 				onBoton: _cargar,
 			);
@@ -464,7 +463,7 @@ class _VerArchivosState extends State<VerArchivos> {
 			return _estado(
 				icono: Icons.picture_as_pdf_outlined,
 				titulo: 'No hay archivos PDF',
-				mensaje: 'La carpeta ${widget.rutaCarpeta} no tiene documentos.',
+				mensaje: 'La carpeta ${rutaPorDefecto} no tiene documentos.',
 				textoBoton: 'Actualizar',
 				onBoton: _cargar,
 			);

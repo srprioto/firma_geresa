@@ -1,9 +1,5 @@
-
-
-// ---------------------------------------------------------
-// 3. EJEMPLO DE USO (Así lo llamarías en otra pantalla)
-// ---------------------------------------------------------
-import 'package:firmador_geresa/screens/settings/general/general.dart';
+import 'package:firmador_geresa/screens/settings/general/general_sgts.dart';
+import 'package:firmador_geresa/screens/settings/nxc/nextcloud_sgts.dart';
 import 'package:firmador_geresa/screens/settings/settings_box.dart';
 import 'package:flutter/material.dart';
 
@@ -21,9 +17,9 @@ class Settings extends StatelessWidget {
 				),
 
 				SettingsTabItem(
-					title: 'Profile',
-					icon: Icons.person_outline,
-					screen: Center(child: Text('Componentes de Profile aquí')),
+					title: 'Nextcloud',
+					icon: Icons.cloud_download,
+					screen: NextcloudStgs(),
 				),
 				// SettingsTabItem(
 				// 	title: 'Data',
