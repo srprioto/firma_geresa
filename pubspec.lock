@@ -150,6 +150,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_desktop_updater:
+    dependency: "direct main"
+    description:
+      name: flutter_desktop_updater
+      sha256: "1d4bd8bec71766dd7f335ea0d7fccc037c42da554a4a7fb1e3f4e17169df837c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.8"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -312,6 +320,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  package_info_plus:
+    dependency: transitive
+    description:
+      name: package_info_plus
+      sha256: "468c26b4254ab01979fa5e4a98cb343ea3631b9acee6f21028997419a80e1a20"
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.0.1"
+  package_info_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: package_info_plus_platform_interface
+      sha256: "202a487f08836a592a6bd4f901ac69b3a8f146af552bbd14407b6b41e1c3f086"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.1"
   path:
     dependency: transitive
     description:

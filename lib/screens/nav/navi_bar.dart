@@ -1,4 +1,5 @@
 import 'package:firmador_geresa/screens/home/home_screen.dart';
+import 'package:firmador_geresa/screens/nav/update_button.dart';
 import 'package:firmador_geresa/screens/settings/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:firmador_geresa/assets/theme/app_theme.dart';
@@ -68,6 +69,8 @@ class _NaviBarState extends State<NaviBar> {
 
 		return Scaffold(
 			backgroundColor: context.backgroundLight,
+			floatingActionButton: const UpdateButton(),
+			floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
 			body: Row(
 				children: [
 					// ==========================================

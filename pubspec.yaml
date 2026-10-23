@@ -23,6 +23,7 @@ dependencies:
   material_ui: ^1.8.0
   reorderables: ^0.6.0
   webview_flutter_windows: ^1.3.0
+  flutter_desktop_updater: ^0.0.8
 
 dev_dependencies:
   flutter_lints: ^3.0.0
