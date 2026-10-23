@@ -9,9 +9,6 @@ import 'package:firmador_geresa/assets/theme/app_theme.dart';
 import 'package:firmador_geresa/services/api_service.dart';
 
 class SignScreen extends StatelessWidget {
-
-	final String rutaBackup = rutaCarpetas;
-
 	const SignScreen({super.key});
 
 	Future<void> _procesarArchivo(BuildContext context, String path, String nombre) async {
@@ -33,18 +30,13 @@ class SignScreen extends StatelessWidget {
 			
 			while (intentos < maxIntentos) {
 				try {
-					// La llamada HTTP se queda esperando todo lo que el backend necesite.
-					// Si el backend responde con error (porque el lector está despertando),
-					// cae al catch y reintenta.
 					titular = await api.obtenerTitular();
-					break; // Si tiene éxito, sale del bucle
+					break; 
 				} catch (e) {
 					intentos++;
 					if (intentos >= maxIntentos) {
-						rethrow; // Si ya falló 5 veces, lanza el error real al catch principal
+						rethrow; 
 					}
-					// Micro-pausa de 200ms para dar tiempo al driver del lector
-					// y no saturar el backend con peticiones instantáneas.
 					await Future.delayed(const Duration(milliseconds: 200));
 				}
 			}
@@ -76,7 +68,7 @@ class SignScreen extends StatelessWidget {
 				builder: (_) => PopupFirma(
 					pdfBytes: pdfConImagen,
 					nombreArchivo: nombre,
-					rutaBackup: rutaBackup,
+					rutaBackup: obtenerRutaNextcloud(), // <-- Función llamada al momento
 				),
 			);
 		} catch (e) {

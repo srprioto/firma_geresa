@@ -10,19 +10,19 @@ class FirmaScreen extends StatelessWidget {
 
 	@override
 	Widget build(BuildContext context) {
-		return const TabScaffold(
+		return TabScaffold(
 			children: [
 				FirmaTabItem(
 					title: 'Firmar Documento',
 					icon: Icons.edit_document,
 					screen: SignScreen(),
 				),
-				FirmaTabItem(
+				const FirmaTabItem(
 					title: 'Ver Archivos',
 					icon: Icons.verified_user_rounded,
 					screen: VerArchivos(),
 				),
-				FirmaTabItem(
+				const FirmaTabItem(
 					title: 'Verificar Firma',
 					icon: Icons.verified_user_rounded,
 					screen: VerifyScreen(),

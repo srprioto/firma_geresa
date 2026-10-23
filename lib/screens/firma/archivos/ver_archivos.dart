@@ -17,7 +17,6 @@ import 'archivos_tabla.dart';
 import 'archivos_toolbar.dart';
 import 'visor_pdf_dialog.dart';
 
-
 class VerArchivos extends StatefulWidget {
 	const VerArchivos({super.key});
 
@@ -26,10 +25,6 @@ class VerArchivos extends StatefulWidget {
 }
 
 class _VerArchivosState extends State<VerArchivos> {
-
-	static const String rutaPorDefecto = rutaCarpetas;
-
-
 	static const int _porPagina = 20;
 
 	final ArchivosService _service = ArchivosService();
@@ -67,7 +62,9 @@ class _VerArchivosState extends State<VerArchivos> {
 	Future<void> _cargar() async {
 		if (_todos.isEmpty) setState(() => _cargando = true);
 		try {
-			final lista = await _service.listar(rutaPorDefecto);
+			// Consultamos la ruta en el momento exacto
+			final ruta = obtenerRutaNextcloud();
+			final lista = await _service.listar(ruta);
 			if (!mounted) return;
 			setState(() {
 				_todos = lista;
@@ -144,7 +141,6 @@ class _VerArchivosState extends State<VerArchivos> {
 		return e.toString();
 	}
 
-	/// Ejecuta una tarea y muestra el mensaje de éxito (o el error).
 	Future<void> _intentar(Future<String?> Function() tarea) async {
 		try {
 			final mensaje = await tarea();
@@ -232,7 +228,6 @@ class _VerArchivosState extends State<VerArchivos> {
 		});
 	}
 
-	/// "Eliminar": solo renombra con el prefijo [DELETE]; deja de verse en la lista.
 	Future<void> _eliminar(List<ArchivoPdf> archivos) async {
 		final uno = archivos.length == 1;
 		final ok = await mostrarConfirmacion(
@@ -254,7 +249,6 @@ class _VerArchivosState extends State<VerArchivos> {
 		});
 	}
 
-	/// "Suprimir": borra el archivo definitivamente del disco.
 	Future<void> _suprimir(List<ArchivoPdf> archivos) async {
 		final uno = archivos.length == 1;
 		final ok = await mostrarConfirmacion(
@@ -276,9 +270,6 @@ class _VerArchivosState extends State<VerArchivos> {
 		});
 	}
 
-	// ==========================================
-	// ACCIONES MÚLTIPLES
-	// ==========================================
 	Future<void> _descargarSeleccion() {
 		return _intentar(() async {
 			final destino = await FilePicker.platform.getDirectoryPath(dialogTitle: 'Elige la carpeta de destino');
@@ -291,11 +282,6 @@ class _VerArchivosState extends State<VerArchivos> {
 		});
 	}
 
-	// ==========================================
-	// FILTROS / ORDEN / SELECCIÓN
-	// ==========================================
-	/// Selector de rango con calendar_date_picker2.
-	/// Si el usuario solo marca un día, se filtra ese día completo.
 	Future<void> _elegirRango() async {
 		final actual = _rango;
 
@@ -369,9 +355,6 @@ class _VerArchivosState extends State<VerArchivos> {
 		});
 	}
 
-	// ==========================================
-	// BUILD
-	// ==========================================
 	@override
 	Widget build(BuildContext context) {
 		final filtrados = _filtrar();
@@ -454,7 +437,7 @@ class _VerArchivosState extends State<VerArchivos> {
 			return _estado(
 				icono: Icons.folder_off_outlined,
 				titulo: 'No se pudo leer la carpeta',
-				mensaje: '${rutaPorDefecto}\n$_error',
+				mensaje: '${obtenerRutaNextcloud()}\n$_error',
 				textoBoton: 'Reintentar',
 				onBoton: _cargar,
 			);
@@ -463,7 +446,7 @@ class _VerArchivosState extends State<VerArchivos> {
 			return _estado(
 				icono: Icons.picture_as_pdf_outlined,
 				titulo: 'No hay archivos PDF',
-				mensaje: 'La carpeta ${rutaPorDefecto} no tiene documentos.',
+				mensaje: 'La carpeta ${obtenerRutaNextcloud()} no tiene documentos.',
 				textoBoton: 'Actualizar',
 				onBoton: _cargar,
 			);
