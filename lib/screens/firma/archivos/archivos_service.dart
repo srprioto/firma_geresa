@@ -97,8 +97,23 @@ class ArchivosService {
 
 	Future<void> mostrarEnCarpeta(String ruta) async {
 		if (Platform.isWindows) {
-			// explorer devuelve código 1 aunque funcione, por eso se ignora
-			await Process.run('explorer.exe', ['/select,', ruta]);
+			// Ruta absoluta y con barras de Windows (\), si no el Explorador
+			// ignora la selección y abre una carpeta por defecto.
+			final absoluta = File(ruta).absolute.path.replaceAll('/', r'\');
+
+			if (!await File(absoluta).exists()) {
+				throw FileSystemException('El archivo ya no existe', absoluta);
+			}
+
+			// PowerShell envía /select,"ruta" como un solo argumento, así que
+			// funciona con espacios, tildes y corchetes en el nombre.
+			final segura = absoluta.replaceAll("'", "''");
+			await Process.run('powershell', [
+				'-NoProfile',
+				'-NonInteractive',
+				'-Command',
+				"Start-Process explorer.exe -ArgumentList ('/select,\"' + '$segura' + '\"')",
+			]);
 		} else if (Platform.isMacOS) {
 			await _run('open', ['-R', ruta]);
 		} else {

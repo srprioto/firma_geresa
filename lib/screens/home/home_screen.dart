@@ -2,6 +2,7 @@ import 'package:firmador_geresa/assets/theme/app_theme.dart';
 import 'package:firmador_geresa/screens/firma/firma_screen.dart';
 import 'package:firmador_geresa/screens/home/action_card.dart';
 import 'package:firmador_geresa/screens/home/home_box.dart';
+import 'package:firmador_geresa/widgets/webview.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -32,7 +33,15 @@ class HomeScreen extends StatelessWidget {
 						icono: const Icon(Icons.copy_all_rounded, size: 40, color: Color(0xFF8B5CF6)),
 						titulo: "Unir PDF's",
 						descripcion: 'Combina varios archivos PDF en uno solo.',
-						onTap: () {},
+						onTap: () {
+							Navigator.push(
+								context,
+								MaterialPageRoute(builder: (context) => const WebView(
+									url: "https://www.ilovepdf.com/es/unir_pdf",
+									titulo: 'Unir Archivos PDF'
+								)),
+							);
+						},
 					),
 					ActionCard(
 						iconBackgroundColor: const Color(0xFFDBEAFE),

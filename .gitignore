@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Datos de WebView2 (evita subir cookies y caché)
+*.exe.WebView2/
+WebViewData/

@@ -26,16 +26,23 @@ class HomeBox extends StatelessWidget {
 									children: [
 										// --- HEADER (Icono, Título, Subtítulo) ---
 										Container(
-											width: 80,
-											height: 80,
+											width: 120,
+											height: 120,
 											decoration: BoxDecoration(
 												color: context.surfaceWhite,
 												borderRadius: BorderRadius.circular(16),
 												boxShadow: AppTheme.shadowSm,
 											),
-											child: const Icon(Icons.copy_all_rounded, size: 40, color: Colors.blue),
+											// Usamos Padding para que la imagen no toque los bordes del contenedor
+											child: Padding(
+												padding: const EdgeInsets.all(12.0),
+												child: Image.asset(
+													'lib/assets/images/logo_firma.png', // Ruta exacta al archivo
+													fit: BoxFit.contain, // Ajusta la imagen para que se vea completa
+												),
+											),
 										),
-										const SizedBox(height: 24),
+										const SizedBox(height: 10),
 										Text(
 											'Todo lo que necesitas,\nen un solo lugar',
 											textAlign: TextAlign.center,
